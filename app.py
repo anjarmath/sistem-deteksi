@@ -43,11 +43,8 @@ def covid_detection():
 @app.route('/', methods = ['POST'])
 def predict():
     imagefile = request.files['imagefile']
-    type = request.form
     image_path = os.path.join(app.config['UPLOAD_FOLDER'], imagefile.filename)
     imagefile.save(image_path)
-
-    print(type['architecture'])
 
     image = load_img(image_path, target_size=(224,224))
     if (is_grey_scale(image_path) == True):

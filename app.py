@@ -13,15 +13,23 @@ app.config['UPLOAD_FOLDER'] = './img/'
 
 
 
-target_names = ['COVID','Normal','Viral Pneumonia']
+target_names_c19 = ['COVID','Normal','Viral Pneumonia']
+target_names_pneumonia = ['Normal','Viral Pneumonia']
 
-def load_model():
-    model = tf.keras.models.load_model('./model_vgg.h5')
-    model.compile(
-        loss='binary_crossentropy',
-        optimizer='SGD',
-        metrics=['accuracy']
-    )
+def load_model(service, modelname):
+    model = tf.keras.models.load_model('./model/{}/model_{}.h5'.format(service, modelname))
+    if (service == 'c19'):
+        model.compile(
+            loss='sparse_categorical_crossentropy',
+            optimizer='SGD',
+            metrics=['accuracy']
+        )
+    else:
+        model.compile(
+            loss='binary_crossentropy',
+            optimizer='Adam',
+            metrics=['accuracy']
+        )
     return model
 
 def is_grey_scale(img_path):
@@ -35,14 +43,23 @@ def is_grey_scale(img_path):
     return True
 
 @app.route('/', methods = ['GET'])
-def covid_detection():
+def detection_system():
     shutil.rmtree('./img/')
     os.mkdir('./img/')
     return render_template("index.html")
 
-@app.route('/', methods = ['POST'])
-def predict():
+@app.route('/c19', methods = ['GET'])
+def detection_c19():
+    return render_template("c19/index.html")
+
+@app.route('/pneumonia', methods = ['GET'])
+def detection_pneumonia():
+    return render_template("pneumonia/index.html")
+
+@app.route('/<service>/predict', methods = ['POST'])
+def predict(service):
     imagefile = request.files['imagefile']
+    modelname = request.values['architecture']
     image_path = os.path.join(app.config['UPLOAD_FOLDER'], imagefile.filename)
     imagefile.save(image_path)
 
@@ -51,22 +68,22 @@ def predict():
         image1 = img_to_array(image)
         image1 = np.expand_dims(image1, axis=0)
         image1 = np.vstack([image1])
-        model = load_model()
+        model = load_model(service, modelname)
         prediksi = model.predict(image1)
         skor = np.max(prediksi)
         classes = np.argmax(prediksi)
         if skor > 0.9:
-            hasil = target_names[classes]
+            hasil = target_names_c19[classes]
         else:
             hasil='Tidak terdeteksi apapun, periksa gambar Anda'
     else:
         hasil = 'Gambar tidak terdeteksi sebagai citra x-ray'
 
-    return render_template("hasil.html", result=hasil, img=imagefile.filename)
+    return render_template(service+"/hasil.html", result=hasil, img=imagefile.filename)
 
 @app.route('/img/<fileimg>')
 def send_uploaded_image(fileimg=''):
     return send_from_directory( app.config['UPLOAD_FOLDER'], fileimg)
 
 if __name__ == '__main__':
-    app.run(port=3000, debug=True)
+    app.run(port=8000, debug=True)

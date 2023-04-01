@@ -73,7 +73,10 @@ def predict(service):
         skor = np.max(prediksi)
         classes = np.argmax(prediksi)
         if skor > 0.9:
-            hasil = target_names_c19[classes]
+            if (service == 'c19'):
+                hasil = target_names_c19[classes]
+            else:
+                hasil = target_names_pneumonia[classes]
         else:
             hasil='Tidak terdeteksi apapun, periksa gambar Anda'
     else:

@@ -89,4 +89,4 @@ def send_uploaded_image(fileimg=''):
     return send_from_directory( app.config['UPLOAD_FOLDER'], fileimg)
 
 if __name__ == '__main__':
-    app.run(port=8000, debug=True)
+    app.run(port=3000, debug=True)
